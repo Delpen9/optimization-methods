@@ -92,10 +92,62 @@ def log_likelihood_function(
 
     return log_likelihood
 
-def gradient_descent(
-    y : np.ndarray
-) -> np.ndarray[float, float]:
-    return None
+def exact_line_search(
+    k : float,
+    c : float,
+    y : np.ndarray,
+    gradient : np.ndarray,
+    learning_rate : float
+) -> float:
+    '''
+    '''
+    step_sizes = np.linspace(0.001, 1.0, num = 1000)
+
+    log_likelihoods = np.array([
+        log_likelihood_function(
+            k - learning_rate * gradient[0], 
+            c - learning_rate * gradient[1],
+            y
+        ) for learning_rate in step_sizes
+    ])
+
+    best_step = step_sizes[np.argmax(log_likelihoods)]
+    return best_step
+
+def gradient_descent_using_exact_line_search(
+    y : np.ndarray,
+    learning_rate : float,
+    max_iterations : int
+) -> tuple[float, float, np.ndarray, np.ndarray, np.ndarray]:
+    '''
+    '''
+    _k = 0
+    _c = 0
+    
+    k_history = []
+    c_history = []
+    log_likelihood_history = []
+
+    log_likelihood = log_likelihood_function(_k, _c, y)
+    log_likelihood_history.append(log_likelihood)
+
+    for i in range(max_iterations):
+        gradient = log_likelihood_gradient(_k, _c, y)
+        step_size = exact_line_search(_k, _c, y, gradient, learning_rate)
+
+        _k = _k - step_size * gradient[0]
+        k_history.append(_k)
+
+        _c = _c - step_size * gradient[1]
+        c_history.append(_c)
+
+        log_likelihood = log_likelihood_function(_k, _c, y)
+        log_likelihood_history.append(log_likelihood)
+
+    return (_k, _c, k_history, c_history, log_likelihood_history)
 
 if __name__ == '__main__':
-    return None
+    y = None
+    learning_rate = None
+    max_iterations = None
+    _k, _c, k_history, c_history, log_likelihood_history = gradient_descent_using_exact_line_search(y, learning_rate, max_iterations)

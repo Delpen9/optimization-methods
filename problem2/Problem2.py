@@ -157,7 +157,7 @@ def gradient_descent_using_exact_line_search(
     '''
     '''
     _k = 0.01
-    _c = 5.0
+    _c = 5
     
     k_history = []
     c_history = []
@@ -189,6 +189,7 @@ if __name__ == '__main__':
     file_directory = os.path.abspath(os.path.join(current_path, '..', '..', 'data', 'Question2.csv'))
 
     y = np.genfromtxt(file_directory, delimiter = ',').flatten()
+
     max_iterations = 10
     best_k, best_c, k_history, c_history, log_likelihood_history = gradient_descent_using_exact_line_search(y, max_iterations)
 
@@ -215,7 +216,7 @@ if __name__ == '__main__':
     plt.xlabel('Iteration')
     plt.ylabel('Parameter Values')
 
-    file_directory = os.path.abspath(os.path.join(current_path, '..', '..', 'output', 'k_and_c_history.png'))
+    file_directory = os.path.abspath(os.path.join(current_path, '..', '..', 'output', 'k_and_c_history_gradient_ascent.png'))
     plt.savefig(file_directory, dpi = 100)
 
     plt.clf()

@@ -1,6 +1,7 @@
 # Standard Libraries
 import os
 import numpy as np
+import cmath
 
 # Plotting
 import matplotlib.pyplot as plt
@@ -28,7 +29,7 @@ def _k_partial(
     assert k > 0
     assert c > 0
 
-    partial_k = np.sum(1 / k - np.log(y**c + 1))
+    partial_k = np.sum(1 / k - np.array([cmath.log(y_val**c + 1).real for y_val in y]))
 
     return partial_k
 
@@ -54,11 +55,11 @@ def _c_partial(
     assert k > 0
     assert c > 0
 
-    term_one_numerator = (k + 1)*(y**c)*np.log(y)
+    term_one_numerator = (k + 1)*(y**c)*np.array([cmath.log(y_val).real for y_val in y])
     term_one_denominator = y**(c + 1)
     term_one = np.divide(term_one_numerator, term_one_denominator)
 
-    partial_c = np.sum(-term_one + 1 / c + np.log(y))
+    partial_c = np.sum(-term_one + 1 / c + np.array([cmath.log(y_val).real for y_val in y]))
 
     return partial_c
 
@@ -106,10 +107,10 @@ def log_likelihood_function(
     assert c > 0
 
     log_likelihood = np.sum(
-        np.log(k) +\
-        np.log(c) +\
-        (c - 1)*np.log(y) -\
-        (k + 1)*np.log(1 + y)
+        cmath.log(k).real +\
+        cmath.log(c).real +\
+        (c - 1)*np.array([cmath.log(y_val).real for y_val in y]) -\
+        (k + 1)*np.array([cmath.log(1 + y_val**c).real for y_val in y])
     )
 
     return log_likelihood
@@ -154,7 +155,7 @@ def gradient_descent_using_exact_line_search(
 ) -> tuple[float, float, np.ndarray, np.ndarray, np.ndarray]:
     '''
     '''
-    _k = 1.0
+    _k = 0.5
     _c = 0.5
     
     k_history = []
@@ -166,10 +167,15 @@ def gradient_descent_using_exact_line_search(
     log_likelihood = log_likelihood_function(_k, _c, y)
     log_likelihood_history.append(log_likelihood)
 
+    gradient = np.array(log_likelihood_gradient(_k, _c, y))
+
+    max_iteration = 30
     iteration = 1
-    while (iteration == 1) or (np.abs(log_likelihood - log_likelihood_old) >= tolerance):
-        gradient = log_likelihood_gradient(_k, _c, y)
-        step_size = exact_line_search(_k, _c, y, gradient)
+    while (np.dot(gradient.T, gradient) > tolerance) and (iteration < max_iteration):
+        gradient = np.array(log_likelihood_gradient(_k, _c, y))
+        # print(gradient)
+        # step_size = exact_line_search(_k, _c, y, gradient)
+        step_size = 1e-5
         
         _k = _k + step_size * gradient[0]
         k_history.append(_k)
@@ -180,8 +186,9 @@ def gradient_descent_using_exact_line_search(
         log_likelihood_old = log_likelihood
         log_likelihood = log_likelihood_function(_k, _c, y)
 
-        log_likelihood_history.append(log_likelihood)
+        # print(log_likelihood)
 
+        log_likelihood_history.append(log_likelihood)
         iteration += 1
 
     best_k = _k

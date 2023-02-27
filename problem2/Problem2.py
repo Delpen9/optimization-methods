@@ -54,10 +54,11 @@ def _c_partial(
     assert k > 0
     assert c > 0
 
-    numerator = 1 + y**c + c * np.log(y) + c*k*y**c*np.log(y)
-    denominator = c * (1 + y**c)
+    term_one_numerator = (k + 1)*(y**c)*np.log(y)
+    term_one_denominator = y**(c + 1)
+    term_one = np.divide(term_one_numerator, term_one_denominator)
 
-    partial_c = np.sum(np.divide(numerator, denominator))
+    partial_c = np.sum(-term_one + 1 / c + np.log(y))
 
     return partial_c
 
@@ -101,20 +102,17 @@ def log_likelihood_function(
         log_likelihood (float):
             The value of the log-likelihood function for the given parameters and observations.
     '''
-    try:
-        assert k > 0
-        assert c > 0
+    assert k > 0
+    assert c > 0
 
-        numerator = k * c * y**(c - 1)
-        denominator = (1 + y)**(k + 1)
-        fraction = np.log(np.divide(numerator, denominator))
+    log_likelihood = np.sum(
+        np.log(k) +\
+        np.log(c) +\
+        (c - 1)*np.log(y) -\
+        (k + 1)*np.log(1 + y)
+    )
 
-        log_likelihood = np.sum(fraction)
-
-        return log_likelihood
-
-    except AssertionError as e:
-        return -np.inf
+    return log_likelihood
 
 def exact_line_search(
     k : float,
@@ -152,33 +150,39 @@ def exact_line_search(
 
 def gradient_descent_using_exact_line_search(
     y : np.ndarray,
-    max_iterations : int
+    tolerance : float = 1e-8
 ) -> tuple[float, float, np.ndarray, np.ndarray, np.ndarray]:
     '''
     '''
-    _k = 0.01
-    _c = 5
+    _k = 1.0
+    _c = 0.5
     
     k_history = []
+    k_history.append(_k)
     c_history = []
+    c_history.append(_c)
     log_likelihood_history = []
 
     log_likelihood = log_likelihood_function(_k, _c, y)
     log_likelihood_history.append(log_likelihood)
 
-    for i in range(max_iterations):
+    iteration = 1
+    while (iteration == 1) or (np.abs(log_likelihood - log_likelihood_old) >= tolerance):
         gradient = log_likelihood_gradient(_k, _c, y)
         step_size = exact_line_search(_k, _c, y, gradient)
-
+        
         _k = _k + step_size * gradient[0]
         k_history.append(_k)
 
         _c = _c + step_size * gradient[1]
         c_history.append(_c)
 
+        log_likelihood_old = log_likelihood
         log_likelihood = log_likelihood_function(_k, _c, y)
 
         log_likelihood_history.append(log_likelihood)
+
+        iteration += 1
 
     best_k = _k
     best_c = _c

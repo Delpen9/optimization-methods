@@ -50,7 +50,7 @@ def _c_partial(
             for the given parameters and observations.
     '''
     term_one_numerator = (k + 1)*(y**c)*np.array([cmath.log(y_val).real for y_val in y])
-    term_one_denominator = y**(c + 1)
+    term_one_denominator = y**(c) + 1
     term_one = np.divide(term_one_numerator, term_one_denominator)
 
     partial_c = np.sum(-term_one + 1 / c + np.array([cmath.log(y_val).real for y_val in y]))
@@ -142,7 +142,7 @@ def exact_line_search(
 
 def gradient_descent_using_exact_line_search(
     y : np.ndarray,
-    tolerance : float = 1e-8
+    tolerance : float = 1e-2
 ) -> tuple[float, float, np.ndarray, np.ndarray, np.ndarray]:
     '''
     '''
@@ -160,10 +160,11 @@ def gradient_descent_using_exact_line_search(
 
     gradient = np.array(log_likelihood_gradient(_k, _c, y))
 
-    max_iteration = 5
+    max_iteration = 15
     iteration = 1
     while (np.dot(gradient.T, gradient) > tolerance) and (iteration < max_iteration):
         gradient = np.array(log_likelihood_gradient(_k, _c, y))
+        print(gradient)
         meshed_step_size = exact_line_search(_k, _c, y, gradient)
         
         _k = _k + meshed_step_size[0] * gradient[0]

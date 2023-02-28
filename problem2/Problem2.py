@@ -61,7 +61,7 @@ def log_likelihood_gradient(
     k : float,
     c : float,
     y : np.ndarray
-) -> list[float, float]:
+) -> np.ndarray[float, float]:
     '''
     Computes the gradient for the log-likelihood function for a set of observations and a given set of parameters.
 
@@ -74,7 +74,7 @@ def log_likelihood_gradient(
         log_likelihood_gradient (np.ndarray([float, float])):
             The value of the gradient of the log-likelihood function for the given parameters and observations.
     '''
-    log_likelihood_gradient = [_k_partial(k, c, y), _c_partial(k, c, y)]
+    log_likelihood_gradient = np.array([_k_partial(k, c, y), _c_partial(k, c, y)])
     return log_likelihood_gradient
 
 def log_likelihood_function(
@@ -158,13 +158,12 @@ def gradient_descent_using_exact_line_search(
     log_likelihood = log_likelihood_function(_k, _c, y)
     log_likelihood_history.append(log_likelihood)
 
-    gradient = np.array(log_likelihood_gradient(_k, _c, y))
+    gradient = log_likelihood_gradient(_k, _c, y)
 
     max_iteration = 15
     iteration = 1
     while (np.dot(gradient.T, gradient) > tolerance) and (iteration < max_iteration):
         gradient = np.array(log_likelihood_gradient(_k, _c, y))
-        print(gradient)
         meshed_step_size = exact_line_search(_k, _c, y, gradient)
         
         _k = _k + meshed_step_size[0] * gradient[0]

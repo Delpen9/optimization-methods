@@ -26,9 +26,6 @@ def _k_partial(
             The value of the partial derivative with respect to k of the log-likelihood function
             for the given parameters and observations.
     '''
-    assert k > 0
-    assert c > 0
-
     partial_k = np.sum(1 / k - np.array([cmath.log(y_val**c + 1).real for y_val in y]))
 
     return partial_k
@@ -52,9 +49,6 @@ def _c_partial(
             The value of the partial derivative with respect to c of the log-likelihood function
             for the given parameters and observations.
     '''
-    assert k > 0
-    assert c > 0
-
     term_one_numerator = (k + 1)*(y**c)*np.array([cmath.log(y_val).real for y_val in y])
     term_one_denominator = y**(c + 1)
     term_one = np.divide(term_one_numerator, term_one_denominator)
@@ -80,9 +74,6 @@ def log_likelihood_gradient(
         log_likelihood_gradient (np.ndarray([float, float])):
             The value of the gradient of the log-likelihood function for the given parameters and observations.
     '''
-    assert k > 0
-    assert c > 0
-
     log_likelihood_gradient = [_k_partial(k, c, y), _c_partial(k, c, y)]
     return log_likelihood_gradient
 
@@ -103,9 +94,6 @@ def log_likelihood_function(
         log_likelihood (float):
             The value of the log-likelihood function for the given parameters and observations.
     '''
-    assert k > 0
-    assert c > 0
-
     log_likelihood = np.sum(
         cmath.log(k).real +\
         cmath.log(c).real +\
@@ -120,22 +108,25 @@ def exact_line_search(
     c : float,
     y : np.ndarray,
     gradient : np.ndarray
-) -> float:
+) -> np.ndarray[float, float]:
     '''
     '''
     log_values = np.logspace(-10, 1, num = 10, base = 10.0)
-    incremental_values = np.arange(0.1, 1.1, 0.1)
+    incremental_values = np.arange(0.2, 1.1, 0.1)
 
     step_sizes = np.outer(log_values, incremental_values).flatten()
+    X, Y = np.meshgrid(step_sizes, step_sizes)
+    meshed_step_sizes = np.stack((X, Y), axis = -1)
+    meshed_step_sizes = meshed_step_sizes.reshape(len(step_sizes)**2, 2)
 
     exact_lines = np.array([
         [
-            k + step_size * gradient[0],
-            c + step_size * gradient[1]
+            k + meshed_step_size[0] * gradient[0],
+            c + meshed_step_size[1] * gradient[1]
         ]
-        for step_size in step_sizes
+        for meshed_step_size in meshed_step_sizes
     ])
-    step_sizes = step_sizes[(exact_lines >= 0).all(axis = 1)]
+    meshed_step_sizes = meshed_step_sizes[(exact_lines >= 0).all(axis = 1)]
     exact_lines = exact_lines[(exact_lines >= 0).all(axis = 1)]
 
     log_likelihoods = np.array([
@@ -146,7 +137,7 @@ def exact_line_search(
         ) for exact_line in exact_lines
     ])
 
-    best_step = step_sizes[np.argmax(log_likelihoods)]
+    best_step = meshed_step_sizes[np.argmax(log_likelihoods)]
     return best_step
 
 def gradient_descent_using_exact_line_search(
@@ -169,24 +160,20 @@ def gradient_descent_using_exact_line_search(
 
     gradient = np.array(log_likelihood_gradient(_k, _c, y))
 
-    max_iteration = 30
+    max_iteration = 5
     iteration = 1
     while (np.dot(gradient.T, gradient) > tolerance) and (iteration < max_iteration):
         gradient = np.array(log_likelihood_gradient(_k, _c, y))
-        # print(gradient)
-        # step_size = exact_line_search(_k, _c, y, gradient)
-        step_size = 1e-5
+        meshed_step_size = exact_line_search(_k, _c, y, gradient)
         
-        _k = _k + step_size * gradient[0]
+        _k = _k + meshed_step_size[0] * gradient[0]
         k_history.append(_k)
 
-        _c = _c + step_size * gradient[1]
+        _c = _c + meshed_step_size[1] * gradient[1]
         c_history.append(_c)
 
         log_likelihood_old = log_likelihood
         log_likelihood = log_likelihood_function(_k, _c, y)
-
-        # print(log_likelihood)
 
         log_likelihood_history.append(log_likelihood)
         iteration += 1

@@ -228,8 +228,6 @@ def newtons_method_using_exact_line_search(
             np.linalg.inv(log_likelihood_hessian(_k, _c, y) + damping_factor * np.eye(2)),
             log_likelihood_gradient(_k, _c, y)
         )
-
-        print(omega)
         
         _k = _k + alpha * omega[0]
         k_history.append(_k)

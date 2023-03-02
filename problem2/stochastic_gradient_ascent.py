@@ -136,7 +136,7 @@ def exact_line_search(
     best_step = meshed_step_sizes[np.argmax(log_likelihoods)]
     return best_step
 
-def gradient_descent_using_exact_line_search(
+def stochastic_gradient_descent_using_exact_line_search(
     y : np.ndarray,
     tolerance : float = 1e-2
 ) -> tuple[float, float, np.ndarray, np.ndarray, np.ndarray]:
@@ -157,7 +157,8 @@ def gradient_descent_using_exact_line_search(
     gradient = log_likelihood_gradient(_k, _c, y)
 
     while (np.dot(gradient.T, gradient) > tolerance):
-        gradient = log_likelihood_gradient(_k, _c, y)
+        y_sample = np.random.choice(y, size = 1)
+        gradient = log_likelihood_gradient(_k, _c, y_sample)
         meshed_step_size = exact_line_search(_k, _c, y, gradient)
         
         _k = _k + meshed_step_size[0] * gradient[0]

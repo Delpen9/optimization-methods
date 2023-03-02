@@ -100,8 +100,7 @@ def log_likelihood_function(
     return log_likelihood
 
 def exact_line_search(
-    k : float,
-    c : float,
+    _y : np.ndarray,
     y : np.ndarray,
     gradient : np.ndarray
 ) -> np.ndarray[float, float]:
@@ -117,8 +116,8 @@ def exact_line_search(
 
     exact_lines = np.array([
         [
-            k + meshed_step_size[0] * gradient[0],
-            c + meshed_step_size[1] * gradient[1]
+            _y[0] + meshed_step_size[0] * gradient[0],
+            _y[1] + meshed_step_size[1] * gradient[1]
         ]
         for meshed_step_size in meshed_step_sizes
     ])
@@ -136,41 +135,49 @@ def exact_line_search(
     best_step = meshed_step_sizes[np.argmax(log_likelihoods)]
     return best_step
 
-def gradient_descent_using_exact_line_search(
+def accelerated_gradient_descent_using_exact_line_search(
     y : np.ndarray,
     tolerance : float = 1e-2
 ) -> tuple[float, float, np.ndarray, np.ndarray, np.ndarray]:
     '''
     '''
-    _k = 0.5
-    _c = 0.5
-    
+    _x = np.array([0.5, 0.5])
+    _x0 = _x.copy()
+    _x00 = _x.copy()
+    _y = np.array([0.5, 0.5])
+
+    k = 1
+
     k_history = []
-    k_history.append(_k)
+    k_history.append(_y[0])
     c_history = []
-    c_history.append(_c)
+    c_history.append(_y[1])
     log_likelihood_history = []
 
-    log_likelihood = log_likelihood_function(_k, _c, y)
+    log_likelihood = log_likelihood_function(_y[0], _y[1], y)
     log_likelihood_history.append(log_likelihood)
 
-    gradient = log_likelihood_gradient(_k, _c, y)
+    gradient = log_likelihood_gradient(_y[0], _y[1], y)
 
     while (np.dot(gradient.T, gradient) > tolerance):
-        gradient = log_likelihood_gradient(_k, _c, y)
-        meshed_step_size = exact_line_search(_k, _c, y, gradient)
+        gradient = log_likelihood_gradient(_y[0], _y[1], y)
+        meshed_step_size = exact_line_search(_y, y, gradient)
         
-        _k = _k + meshed_step_size[0] * gradient[0]
-        k_history.append(_k)
+        _x = _y + meshed_step_size * gradient
+        _y = _x0 + (k - 1) / (k + 2) * (_x0 - _x00)
 
-        _c = _c + meshed_step_size[1] * gradient[1]
-        c_history.append(_c)
+        k_history.append(_x[0])
+        c_history.append(_x[1])
 
         log_likelihood_old = log_likelihood
-        log_likelihood = log_likelihood_function(_k, _c, y)
+        log_likelihood = log_likelihood_function(_x[0], _x[1], y)
 
         log_likelihood_history.append(log_likelihood)
 
-    best_k = _k
-    best_c = _c
+        _x0 = _x.copy()
+        _x00 = _x0.copy()
+        k += 1
+
+    best_k = _x[0]
+    best_c = _x[1]
     return (best_k, best_c, k_history, c_history, log_likelihood_history)

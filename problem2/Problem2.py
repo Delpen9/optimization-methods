@@ -167,23 +167,23 @@ if __name__ == '__main__':
 
     y = np.genfromtxt(file_directory, delimiter = ',').flatten()
 
-    # start_time = time.time()
-    # optimizer_1_report(y)
-    # end_time = time.time()
-    # total_time = end_time - start_time
-    # print(fr'Total time taken for optimizer 1: {total_time}')
+    start_time = time.time()
+    optimizer_1_report(y)
+    end_time = time.time()
+    total_time = end_time - start_time
+    print(fr'Total time taken for optimizer 1: {total_time}')
 
-    # start_time = time.time()
-    # optimizer_2_report(y)
-    # end_time = time.time()
-    # total_time = end_time - start_time
-    # print(fr'Total time taken for optimizer 2: {total_time}')
+    start_time = time.time()
+    optimizer_2_report(y)
+    end_time = time.time()
+    total_time = end_time - start_time
+    print(fr'Total time taken for optimizer 2: {total_time}')
 
-    # start_time = time.time()
-    # optimizer_3_report(y)
-    # end_time = time.time()
-    # total_time = end_time - start_time
-    # print(fr'Total time taken for optimizer 3: {total_time}')
+    start_time = time.time()
+    optimizer_3_report(y)
+    end_time = time.time()
+    total_time = end_time - start_time
+    print(fr'Total time taken for optimizer 3: {total_time}')
 
     start_time = time.time()
     optimizer_4_report(y)

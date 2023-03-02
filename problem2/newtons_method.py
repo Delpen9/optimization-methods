@@ -86,7 +86,7 @@ def _partial_ck(
     c : float,
     y : np.ndarray
 ) -> float:
-    numerator = -y**c * np.log(y)
+    numerator = -y**c * np.array([cmath.log(y_val).real for y_val in y])
     denominator = y**c + 1
     dcdk = np.sum(numerator / denominator)
     return dcdk
@@ -96,7 +96,7 @@ def _partial_kc(
     c : float,
     y : np.ndarray
 ) -> float:
-    numerator = -y**c * np.log(y)
+    numerator = -y**c * np.array([cmath.log(y_val).real for y_val in y])
     denominator = y**c + 1
     dkdc = np.sum(numerator / denominator)
     return dkdc
@@ -109,8 +109,8 @@ def _partial_cc(
     term_one = -1/c**2
 
     term_two_constant = -(k + 1)
-    term_two = y**c*np.log(y)**2 / (y**c + 1) -\
-            y**(2*c)*np.log(y)**2 / (y**c + 1)**2
+    term_two = y**c*np.array([cmath.log(y_val).real for y_val in y])**2 / (y**c + 1) -\
+            y**(2*c)*np.array([cmath.log(y_val).real for y_val in y])**2 / (y**c + 1)**2
     term_two *= term_two_constant
 
     dcdc = np.sum(term_one + term_two)
@@ -197,12 +197,15 @@ def exact_line_search(
 
 def newtons_method_using_exact_line_search(
     y : np.ndarray,
-    tolerance : float = 1e-2
+    tolerance : float = 10,
+    damping_factor : float = 1e-10
 ) -> tuple[float, float, np.ndarray, np.ndarray, np.ndarray]:
     '''
     '''
     _k = 0.5
     _c = 0.5
+
+    alpha = 1e-10
     
     k_history = []
     k_history.append(_k)
@@ -213,22 +216,43 @@ def newtons_method_using_exact_line_search(
     log_likelihood = log_likelihood_function(_k, _c, y)
     log_likelihood_history.append(log_likelihood)
 
-    gradient = log_likelihood_gradient(_k, _c, y)
+    hessian = log_likelihood_hessian(_k, _c, y)
 
-    while (np.dot(gradient.T, gradient) > tolerance):
-        gradient = log_likelihood_gradient(_k, _c, y)
-        meshed_step_size = exact_line_search(_k, _c, y, gradient)
+    omega = -np.linalg.solve(
+        np.linalg.inv(hessian + damping_factor * np.eye(2)),
+        log_likelihood_gradient(_k, _c, y)
+    )
+
+    while (np.amax(np.abs(omega)) > tolerance):
+        omega = -np.linalg.solve(
+            np.linalg.inv(log_likelihood_hessian(_k, _c, y) + damping_factor * np.eye(2)),
+            log_likelihood_gradient(_k, _c, y)
+        )
+
+        print(omega)
         
-        _k = _k + meshed_step_size[0] * gradient[0]
+        _k = _k + alpha * omega[0]
         k_history.append(_k)
 
-        _c = _c + meshed_step_size[1] * gradient[1]
+        _c = _c + alpha * omega[1]
         c_history.append(_c)
 
-        log_likelihood_old = log_likelihood
         log_likelihood = log_likelihood_function(_k, _c, y)
-
         log_likelihood_history.append(log_likelihood)
+
+        while log_likelihood_function(_k, _c, y) > log_likelihood:
+            alpha *= 0.1
+
+            _k = _k + alpha * omega[0]
+            k_history.append(_k)
+
+            _c = _c + alpha * omega[1]
+            c_history.append(_c)
+
+            log_likelihood = log_likelihood_function(_k, _c, y)
+            log_likelihood_history.append(log_likelihood)
+
+        alpha = alpha**0.5
 
     best_k = _k
     best_c = _c

@@ -166,13 +166,11 @@ def exact_line_search(
 ) -> np.ndarray[float, float]:
     '''
     '''
-    log_values = np.logspace(-2, 2, num = 4, base = 10.0)
-    incremental_values = np.arange(0.2, 1.01, 0.2)
+    log_values = np.logspace(-10, -5, num = 5, base = 10.0)
 
-    step_sizes = np.outer(log_values, incremental_values).flatten()
-    X, Y = np.meshgrid(step_sizes, step_sizes)
+    X, Y = np.meshgrid(log_values, log_values)
     meshed_step_sizes = np.stack((X, Y), axis = -1)
-    meshed_step_sizes = meshed_step_sizes.reshape(len(step_sizes)**2, 2)
+    meshed_step_sizes = meshed_step_sizes.reshape(len(log_values)**2, 2)
 
     exact_lines = np.array([
         [
@@ -197,15 +195,13 @@ def exact_line_search(
 
 def newtons_method_using_exact_line_search(
     y : np.ndarray,
-    tolerance : float = 10,
+    tolerance : float = 1e-2,
     damping_factor : float = 1e-10
 ) -> tuple[float, float, np.ndarray, np.ndarray, np.ndarray]:
     '''
     '''
     _k = 0.5
     _c = 0.5
-
-    alpha = 1e-10
     
     k_history = []
     k_history.append(_k)
@@ -224,33 +220,23 @@ def newtons_method_using_exact_line_search(
     )
 
     while (np.amax(np.abs(omega)) > tolerance):
+        hessian = log_likelihood_hessian(_k, _c, y)
+
         omega = -np.linalg.solve(
-            np.linalg.inv(log_likelihood_hessian(_k, _c, y) + damping_factor * np.eye(2)),
+            np.linalg.inv(hessian + damping_factor * np.eye(2)),
             log_likelihood_gradient(_k, _c, y)
         )
+
+        meshed_step_size = exact_line_search(_k, _c, y, omega)
         
-        _k = _k + alpha * omega[0]
+        _k = _k + meshed_step_size[0] * omega[0]
         k_history.append(_k)
 
-        _c = _c + alpha * omega[1]
+        _c = _c + meshed_step_size[1] * omega[1]
         c_history.append(_c)
 
         log_likelihood = log_likelihood_function(_k, _c, y)
         log_likelihood_history.append(log_likelihood)
-
-        while log_likelihood_function(_k, _c, y) > log_likelihood:
-            alpha *= 0.1
-
-            _k = _k + alpha * omega[0]
-            k_history.append(_k)
-
-            _c = _c + alpha * omega[1]
-            c_history.append(_c)
-
-            log_likelihood = log_likelihood_function(_k, _c, y)
-            log_likelihood_history.append(log_likelihood)
-
-        alpha = alpha**0.5
 
     best_k = _k
     best_c = _c

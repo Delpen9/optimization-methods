@@ -105,6 +105,35 @@ def loss_function_right_term(
     loss_function_right_term = np.sum(numerator / denominator)
     return loss_function_right_term
 
+def get_scatter(
+    d1 : float,
+    y1 : float,
+    d : np.ndarray,
+    y : np.ndarray,
+    beta1 : float,
+    beta2 : float,
+) -> np.ndarray:
+    def right_term(
+        d1 : float,
+        y1 : float,
+        di : float,
+        beta1 : float,
+        beta2 : float
+    ) -> float:
+        numerator = y1*beta1
+        denominator = y1 + (beta1 - y1)*np.e**(-beta2*di)
+        loss_function_right_term = numerator / denominator
+        return loss_function_right_term
+
+    all_right_terms = np.array([right_term(d1, y1, d, beta1, beta2) for di in d]).T
+    all_y_values = np.expand_dims(np.arange(0, 101), axis = 0).T
+
+    print(all_right_terms)
+
+    scatter_values = np.hstack((all_y_values, all_right_terms))
+
+    return scatter_values
+
 def gauss_newton_adaptive_step_size(
     d : np.ndarray,
     y : np.ndarray,
@@ -263,6 +292,20 @@ if __name__ == '__main__':
     plt.ylabel('Parameter Values')
 
     file_directory = os.path.abspath(os.path.join(current_path, '..', '..', 'output', 'loss_function_history_gauss_newton_method.png'))
+    plt.savefig(file_directory, dpi = 100)
+
+    plt.clf()
+    plt.cla()
+
+    # scatter plot
+    scatter_data = get_scatter(d1, y1, d, y, best_beta1, best_beta2)
+
+    plt.scatter(scatter_data[:, 0], scatter_data[:, 1])
+
+    plt.xlabel('Y values')
+    plt.ylabel('Right Term Values')
+
+    file_directory = os.path.abspath(os.path.join(current_path, '..', '..', 'output', 'y_vs_right_term_gauss_newton_method.png'))
     plt.savefig(file_directory, dpi = 100)
 
     plt.clf()

@@ -8,13 +8,6 @@ import time
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Imports
-from gradient_ascent import gradient_descent_using_exact_line_search
-from accelerated_gradient_ascent import accelerated_gradient_descent_using_exact_line_search
-from stochastic_gradient_ascent import stochastic_gradient_descent_using_exact_line_search
-from newtons_method import newtons_method_using_exact_line_search
-
-
 def _partial_kk(
     k : float,
     c : float,

@@ -2,7 +2,10 @@
 import os
 import numpy as np
 import pandas as pd
+
+# Plotting
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 def _partial_beta1(
     d1 : float,
@@ -14,8 +17,8 @@ def _partial_beta1(
 ) -> float:
     '''
     '''
-    numerator = y1**2*(np.e**(beta2*di) - 1)
-    denominator = (beta1*np.e**(beta2*di) - y1*np.e**(beta2*di) + y1)**2
+    numerator = y1**2*np.e**(beta2*di)*(np.e**(beta2*di) - 1)
+    denominator = (beta1 + y1*(np.e**(beta2*di) - 1))**2
 
     partial_beta1 = numerator / denominator
     return partial_beta1
@@ -31,7 +34,7 @@ def _partial_beta2(
     '''
     '''
     numerator = di*beta1*y1*(beta1 - y1)*np.e**(beta2*di)
-    denominator = ((beta1 - y1)*np.e**(beta2*di) + y1)**2
+    denominator = (beta1 + y1*(np.e**(beta2*di) - 1))**2
 
     partial_beta2 = numerator / denominator
     return partial_beta2
@@ -62,7 +65,7 @@ def decomposed_loss_function(
     beta1 : float,
     beta2 : float
 ) -> np.ndarray:
-    _g = y - (y1*beta1)/(y1 + (beta1 - y1)*np.e**(beta2*d))
+    _g = y - (y1*beta1)/(y1 + (beta1 - y1)*np.e**(-beta2*d))
     return _g.T
 
 def loss_function(
@@ -86,11 +89,17 @@ def gauss_newton_adaptive_step_size(
     beta1 : float,
     beta2 : float,
     tolerance : float = 1e-2,
-    damping_factor : float = 1e-10
-) -> tuple[float, float]:
+    damping_factor : float = 1e-10,
+    max_iterations : float = 100
+) -> tuple[float, float, np.ndarray, np.ndarray]:
     '''
     '''
-    alpha = 1
+    alpha = 1e+2
+
+    beta_1_history = []
+    beta_1_history.append(beta1)
+    beta_2_history = []
+    beta_2_history.append(beta2)
 
     _jacobian = jacobian(d1, y1, d, y, beta1, beta2)
     _g = decomposed_loss_function(d1, y1, d, y, beta1, beta2)
@@ -100,7 +109,8 @@ def gauss_newton_adaptive_step_size(
         _jacobian.T @ _g
     )
 
-    while (np.amax(np.abs(omega)) > tolerance):
+    iteration = 1
+    while (np.amax(np.abs(omega)) > tolerance) and (iteration < max_iterations):
         _jacobian = jacobian(d1, y1, d, y, beta1, beta2)
         _g = decomposed_loss_function(d1, y1, d, y, beta1, beta2)
 
@@ -109,10 +119,8 @@ def gauss_newton_adaptive_step_size(
             _jacobian.T @ _g
         )
 
-        print(omega)
-
         _loss = loss_function(d1, y1, d, y, beta1, beta2)
-        new_loss = _loss + 1 # Only for starting the while loop
+        new_loss = _loss + 1
 
         while new_loss > _loss:
             beta1_new = beta1 - alpha * omega[0]
@@ -125,11 +133,20 @@ def gauss_newton_adaptive_step_size(
         beta1 = beta1_new
         beta2 = beta2_new
 
+        beta_1_history.append(beta1)
+        beta_2_history.append(beta2)
+
         alpha = alpha**0.5
+
+        iteration += 1
 
     best_beta1 = beta1
     best_beta2 = beta2
-    return (best_beta1, best_beta2)
+
+    beta_1_history = np.array(beta_1_history)
+    beta_2_history = np.array(beta_2_history)
+
+    return (best_beta1, best_beta2, beta_1_history, beta_2_history)
 
 if __name__ == '__main__':
     current_path = os.path.abspath(__file__)
@@ -145,11 +162,23 @@ if __name__ == '__main__':
     beta1 = 0.5
     beta2 = 0.5
 
-    best_beta1, best_beta2 = gauss_newton_adaptive_step_size(
+    best_beta1, best_beta2, beta_1_history, beta_2_history = gauss_newton_adaptive_step_size(
         d,
         y,
         beta1,
         beta2,
     )
 
-    print(best_beta1, best_beta2)
+    iterations = np.arange(0, len(beta_1_history))
+    sns.lineplot(x = iterations, y = beta_1_history)
+    sns.lineplot(x = iterations, y = beta_2_history)
+
+    plt.title('Values of Beta 1 and Beta 2 \nUsing the Gauss-Newton Method')
+    plt.xlabel('Iteration')
+    plt.ylabel('Parameter Values')
+
+    file_directory = os.path.abspath(os.path.join(current_path, '..', '..', 'output', 'beta_1_2_history_gauss_newton_method.png'))
+    plt.savefig(file_directory, dpi = 100)
+
+    plt.clf()
+    plt.cla()

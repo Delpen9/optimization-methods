@@ -22,6 +22,15 @@ def optimizer_1_report(
     tolerance = 1e-1
     best_k, best_c, k_history, c_history, log_likelihood_history = gradient_descent_using_exact_line_search(y, tolerance)
 
+    print(fr'''
+The best k value for gradient descent is:
+{best_k}
+
+The best c value for gradient descent is:
+{best_c}
+
+    ''')
+
     # Plot Log-Likelihood
     iterations = np.arange(0, len(log_likelihood_history))
     sns.lineplot(x = iterations, y = log_likelihood_history)
@@ -58,6 +67,15 @@ def optimizer_2_report(
     '''
     tolerance = 1e-1
     best_k, best_c, k_history, c_history, log_likelihood_history = accelerated_gradient_descent_using_exact_line_search(y, tolerance)
+
+    print(fr'''
+The best k value for accelerated gradient descent is:
+{best_k}
+
+The best c value for accelerated gradient descent is:
+{best_c}
+
+    ''')
 
     # Plot Log-Likelihood
     iterations = np.arange(0, len(log_likelihood_history))
@@ -96,8 +114,14 @@ def optimizer_3_report(
     tolerance = 1e-1
     best_k, best_c, k_history, c_history, log_likelihood_history = stochastic_gradient_descent_using_exact_line_search(y, tolerance)
 
-    print(best_k)
-    print(best_c)
+    print(fr'''
+The best k value for stochastic gradient descent is:
+{best_k}
+
+The best c value for stochastic gradient descent is:
+{best_c}
+
+    ''')
 
     # Plot Log-Likelihood
     iterations = np.arange(0, len(log_likelihood_history))
@@ -135,6 +159,15 @@ def optimizer_4_report(
     '''
     best_k, best_c, k_history, c_history, log_likelihood_history = newtons_method_using_exact_line_search(y)
 
+    print(fr'''
+The best k value for newton's method is:
+{best_k}
+
+The best c value for newton's method  is:
+{best_c}
+
+    ''')
+
     # Plot Log-Likelihood
     iterations = np.arange(0, len(log_likelihood_history))
     sns.lineplot(x = iterations, y = log_likelihood_history)
@@ -170,23 +203,23 @@ if __name__ == '__main__':
 
     y = np.genfromtxt(file_directory, delimiter = ',').flatten()
 
-    # start_time = time.time()
-    # optimizer_1_report(y)
-    # end_time = time.time()
-    # total_time = end_time - start_time
-    # print(fr'Total time taken for optimizer 1: {total_time}')
+    start_time = time.time()
+    optimizer_1_report(y)
+    end_time = time.time()
+    total_time = end_time - start_time
+    print(fr'Total time taken for optimizer 1: {total_time}')
 
-    # start_time = time.time()
-    # optimizer_2_report(y)
-    # end_time = time.time()
-    # total_time = end_time - start_time
-    # print(fr'Total time taken for optimizer 2: {total_time}')
+    start_time = time.time()
+    optimizer_2_report(y)
+    end_time = time.time()
+    total_time = end_time - start_time
+    print(fr'Total time taken for optimizer 2: {total_time}')
 
-    # start_time = time.time()
-    # optimizer_3_report(y)
-    # end_time = time.time()
-    # total_time = end_time - start_time
-    # print(fr'Total time taken for optimizer 3: {total_time}')
+    start_time = time.time()
+    optimizer_3_report(y)
+    end_time = time.time()
+    total_time = end_time - start_time
+    print(fr'Total time taken for optimizer 3: {total_time}')
 
     start_time = time.time()
     optimizer_4_report(y)

@@ -128,8 +128,6 @@ def get_scatter(
     all_right_terms = np.array([right_term(d1, y1, d, beta1, beta2) for di in d]).T
     all_y_values = np.expand_dims(np.arange(0, 101), axis = 0).T
 
-    print(all_right_terms)
-
     scatter_values = np.hstack((all_y_values, all_right_terms))
 
     return scatter_values
@@ -238,6 +236,14 @@ if __name__ == '__main__':
         beta1,
         beta2,
     )
+
+    print(fr'''
+The best value of beta 1 is:
+{best_beta1}
+
+The best value of beta 2 is:
+{best_beta2}
+    ''')
 
     # Beta 1 and Beta 2
     iterations = np.arange(0, len(beta_1_history))

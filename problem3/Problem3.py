@@ -83,6 +83,28 @@ def loss_function(
     loss_function = np.sum((y - numerator / denominator)**2)
     return loss_function
 
+def loss_function_left_term(
+    y : np.ndarray
+) -> float:
+    '''
+    '''
+    loss_function_left_term = np.sum(y)
+    return loss_function_left_term
+    
+def loss_function_right_term(
+    d1 : float,
+    y1 : float,
+    d : np.ndarray,
+    beta1 : float,
+    beta2 : float
+) -> float:
+    '''
+    '''
+    numerator = y1*beta1
+    denominator = y1 + (beta1 - y1)*np.e**(-beta2*d)
+    loss_function_right_term = np.sum(numerator / denominator)
+    return loss_function_right_term
+
 def gauss_newton_adaptive_step_size(
     d : np.ndarray,
     y : np.ndarray,
@@ -91,7 +113,7 @@ def gauss_newton_adaptive_step_size(
     tolerance : float = 1e-2,
     damping_factor : float = 1e-10,
     max_iterations : float = 100
-) -> tuple[float, float, np.ndarray, np.ndarray]:
+) -> tuple[float, float, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     '''
     '''
     alpha = 1e+2
@@ -100,6 +122,11 @@ def gauss_newton_adaptive_step_size(
     beta_1_history.append(beta1)
     beta_2_history = []
     beta_2_history.append(beta2)
+
+    left_term_history = []
+    left_term_history.append(loss_function_left_term(y))
+    right_term_history = []
+    right_term_history.append(loss_function_right_term(d1, y1, d, beta1, beta2))
 
     _jacobian = jacobian(d1, y1, d, y, beta1, beta2)
     _g = decomposed_loss_function(d1, y1, d, y, beta1, beta2)
@@ -120,6 +147,10 @@ def gauss_newton_adaptive_step_size(
         )
 
         _loss = loss_function(d1, y1, d, y, beta1, beta2)
+
+        left_term_history.append(loss_function_left_term(y))
+        right_term_history.append(loss_function_right_term(d1, y1, d, beta1, beta2))
+
         new_loss = _loss + 1
 
         while new_loss > _loss:
@@ -146,7 +177,10 @@ def gauss_newton_adaptive_step_size(
     beta_1_history = np.array(beta_1_history)
     beta_2_history = np.array(beta_2_history)
 
-    return (best_beta1, best_beta2, beta_1_history, beta_2_history)
+    left_term_history = np.array(left_term_history)
+    right_term_history = np.array(right_term_history)
+
+    return (best_beta1, best_beta2, beta_1_history, beta_2_history, left_term_history, right_term_history)
 
 if __name__ == '__main__':
     current_path = os.path.abspath(__file__)
@@ -162,13 +196,14 @@ if __name__ == '__main__':
     beta1 = 0.5
     beta2 = 0.5
 
-    best_beta1, best_beta2, beta_1_history, beta_2_history = gauss_newton_adaptive_step_size(
+    best_beta1, best_beta2, beta_1_history, beta_2_history, left_term_history, right_term_history = gauss_newton_adaptive_step_size(
         d,
         y,
         beta1,
         beta2,
     )
 
+    # Beta 1 and Beta 2
     iterations = np.arange(0, len(beta_1_history))
     sns.lineplot(x = iterations, y = beta_1_history)
     sns.lineplot(x = iterations, y = beta_2_history)
@@ -178,6 +213,34 @@ if __name__ == '__main__':
     plt.ylabel('Parameter Values')
 
     file_directory = os.path.abspath(os.path.join(current_path, '..', '..', 'output', 'beta_1_2_history_gauss_newton_method.png'))
+    plt.savefig(file_directory, dpi = 100)
+
+    plt.clf()
+    plt.cla()
+
+    # y
+    iterations = np.arange(0, len(left_term_history))
+    sns.lineplot(x = iterations, y = left_term_history)
+
+    plt.title('Values of y \nUsing the Gauss-Newton Method')
+    plt.xlabel('Iteration')
+    plt.ylabel('Parameter Values')
+
+    file_directory = os.path.abspath(os.path.join(current_path, '..', '..', 'output', 'y_history_gauss_newton_method.png'))
+    plt.savefig(file_directory, dpi = 100)
+
+    plt.clf()
+    plt.cla()
+
+    # right term
+    iterations = np.arange(0, len(right_term_history))
+    sns.lineplot(x = iterations, y = right_term_history)
+
+    plt.title('Values of Right Term \nUsing the Gauss-Newton Method')
+    plt.xlabel('Iteration')
+    plt.ylabel('Parameter Values')
+
+    file_directory = os.path.abspath(os.path.join(current_path, '..', '..', 'output', 'right_term_history_gauss_newton_method.png'))
     plt.savefig(file_directory, dpi = 100)
 
     plt.clf()

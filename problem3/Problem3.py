@@ -128,6 +128,9 @@ def gauss_newton_adaptive_step_size(
     right_term_history = []
     right_term_history.append(loss_function_right_term(d1, y1, d, beta1, beta2))
 
+    loss_function_history = []
+    loss_function_history.append(loss_function(d1, y1, d, y, beta1, beta2))
+
     _jacobian = jacobian(d1, y1, d, y, beta1, beta2)
     _g = decomposed_loss_function(d1, y1, d, y, beta1, beta2)
 
@@ -150,6 +153,8 @@ def gauss_newton_adaptive_step_size(
 
         left_term_history.append(loss_function_left_term(y))
         right_term_history.append(loss_function_right_term(d1, y1, d, beta1, beta2))
+
+        loss_function_history.append(loss_function(d1, y1, d, y, beta1, beta2))
 
         new_loss = _loss + 1
 
@@ -180,7 +185,9 @@ def gauss_newton_adaptive_step_size(
     left_term_history = np.array(left_term_history)
     right_term_history = np.array(right_term_history)
 
-    return (best_beta1, best_beta2, beta_1_history, beta_2_history, left_term_history, right_term_history)
+    loss_function_history = np.array(loss_function_history)
+
+    return (best_beta1, best_beta2, beta_1_history, beta_2_history, left_term_history, right_term_history, loss_function_history)
 
 if __name__ == '__main__':
     current_path = os.path.abspath(__file__)
@@ -196,7 +203,7 @@ if __name__ == '__main__':
     beta1 = 0.5
     beta2 = 0.5
 
-    best_beta1, best_beta2, beta_1_history, beta_2_history, left_term_history, right_term_history = gauss_newton_adaptive_step_size(
+    best_beta1, best_beta2, beta_1_history, beta_2_history, left_term_history, right_term_history, loss_function_history = gauss_newton_adaptive_step_size(
         d,
         y,
         beta1,
@@ -241,6 +248,21 @@ if __name__ == '__main__':
     plt.ylabel('Parameter Values')
 
     file_directory = os.path.abspath(os.path.join(current_path, '..', '..', 'output', 'right_term_history_gauss_newton_method.png'))
+    plt.savefig(file_directory, dpi = 100)
+
+    plt.clf()
+    plt.cla()
+
+    # loss function
+    iterations = np.arange(0, len(loss_function_history))
+    ax = sns.lineplot(x = iterations, y = loss_function_history)
+    ax.set(yscale = 'log')
+
+    plt.title('Values of Loss Function \nUsing the Gauss-Newton Method')
+    plt.xlabel('Iteration')
+    plt.ylabel('Parameter Values')
+
+    file_directory = os.path.abspath(os.path.join(current_path, '..', '..', 'output', 'loss_function_history_gauss_newton_method.png'))
     plt.savefig(file_directory, dpi = 100)
 
     plt.clf()
